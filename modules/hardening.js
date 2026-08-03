@@ -44,7 +44,7 @@
     intro.className = 'module-intro';
     intro.textContent = tr({
       en: 'You’ve been handed this server to harden. Check every action you would take — but watch out, some of the proposed actions would do more harm than good.',
-      cs: 'Dostala jsi tento server na zabezpečení (hardening). Zaškrtni každou akci, kterou bys provedla — pozor, některé z navržených akcí by napáchaly víc škody než užitku.'
+      cs: 'Máš za úkol zabezpečit (hardening) tento server. Zaškrtni každou akci, která by se měla provést — pozor, některé z navržených akcí by napáchaly víc škody než užitku.'
     });
     container.appendChild(intro);
 

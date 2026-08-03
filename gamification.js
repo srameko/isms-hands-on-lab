@@ -28,7 +28,13 @@
       bestLine: 'Best: {score} / {max} · attempts: {attempts}',
       themeAuto: 'Match system theme',
       themeLight: 'Light theme',
-      themeDark: 'Dark theme'
+      themeDark: 'Dark theme',
+      certTabTitle: 'Certificate',
+      certTitle: 'Certificate of Completion',
+      certIntro: 'Awarded for completing all modules of the ISMS Hands-On Lab.',
+      certDate: 'Date:',
+      certScore: 'Total score:',
+      certPrint: 'Print / save as PDF'
     },
     cs: {
       loginTitle: 'Vítej!',
@@ -37,10 +43,10 @@
       loginButton: 'Spustit lab',
       loginNote: 'Tvoje jméno a skóre zůstávají jen v tomto prohlížeči — nikam se neodesílají.',
       changeName: 'Změnit jméno',
-      badge: '🏅 Bezpečnostní analytička',
+      badge: '🏅 Bezpečnostní analýza zvládnuta',
       modulesWord: 'modulů',
       footer: 'Czechitas — Specialistka informační bezpečnosti · doprovodné cvičení k přednáškám ISMS',
-      tierChampion: 'Bezpečnostní šampionka 🏆',
+      tierChampion: 'Mistrovský výkon 🏆',
       tierSolid: 'Solidní znalosti 💪',
       tierWeak: 'Stojí za to zopakovat 🔍',
       bestSoFar: 'Tvoje dosavadní nejlepší skóre: <strong>{best}</strong> — počítá se to nejlepší.',
@@ -49,7 +55,13 @@
       bestLine: 'Nejlepší: {score} / {max} · pokusů: {attempts}',
       themeAuto: 'Podle systému',
       themeLight: 'Světlý motiv',
-      themeDark: 'Tmavý motiv'
+      themeDark: 'Tmavý motiv',
+      certTabTitle: 'Certifikát',
+      certTitle: 'Certifikát o dokončení',
+      certIntro: 'Uděleno za dokončení všech modulů ISMS Hands-On Labu.',
+      certDate: 'Datum:',
+      certScore: 'Celkové skóre:',
+      certPrint: 'Vytisknout / uložit jako PDF'
     }
   };
 
@@ -108,6 +120,14 @@
     return t('tierWeak');
   }
 
+  function medal(score, maxScore) {
+    const pct = maxScore ? score / maxScore : 0;
+    if (pct >= 0.9) return '🥇';
+    if (pct >= 0.75) return '🥈';
+    if (pct >= 0.6) return '🥉';
+    return '';
+  }
+
   function totals() {
     let total = 0, max = 0, done = 0;
     modules.forEach(m => {
@@ -132,6 +152,7 @@
     document.getElementById('header-name').textContent = state.name || '';
     document.getElementById('header-badge').textContent = t('badge');
     document.getElementById('header-badge').classList.toggle('hidden', tt.done < tt.count);
+    updateCertTab();
   }
 
   function updateTabs() {
@@ -141,8 +162,16 @@
       const s = moduleState(m.id);
       btn.classList.toggle('done', !!s.completed);
       btn.classList.toggle('active', m.id === activeId);
-      btn.querySelector('.tab-check').textContent = s.completed ? '✓' : '';
+      btn.querySelector('.tab-check').textContent = s.completed ? (medal(s.score, s.maxScore) || '✓') : '';
     });
+  }
+
+  function updateCertTab() {
+    const btn = document.getElementById('tab-certificate');
+    if (!btn) return;
+    const tt = totals();
+    btn.classList.toggle('hidden', tt.count === 0 || tt.done < tt.count);
+    btn.classList.toggle('active', activeId === 'certificate');
   }
 
   function buildTabs() {
@@ -159,7 +188,17 @@
       btn.addEventListener('click', () => show(m.id));
       nav.appendChild(btn);
     });
+    const certBtn = document.createElement('button');
+    certBtn.className = 'tab cert-tab done hidden';
+    certBtn.id = 'tab-certificate';
+    certBtn.innerHTML =
+      '<span class="tab-icon">🎓</span>' +
+      '<span>' + t('certTabTitle') + '</span>' +
+      '<span class="tab-check"></span>';
+    certBtn.addEventListener('click', () => showCertificate());
+    nav.appendChild(certBtn);
     updateTabs();
+    updateCertTab();
   }
 
   function show(id) {
@@ -172,10 +211,11 @@
     const head = document.createElement('div');
     head.className = 'module-header';
     const s = moduleState(id);
+    const medalIcon = s.completed ? medal(s.score, s.maxScore) : '';
     head.innerHTML =
       '<h2>' + m.icon + ' ' + tr(m.title) + '</h2>' +
       '<span class="module-best">' +
-      (s.completed ? t('bestLine', { score: s.score, max: m.maxScore, attempts: s.attempts }) : t('notAttempted')) +
+      (s.completed ? (medalIcon ? medalIcon + ' ' : '') + t('bestLine', { score: s.score, max: m.maxScore, attempts: s.attempts }) : t('notAttempted')) +
       '</span>';
     container.appendChild(head);
 
@@ -191,9 +231,10 @@
     const best = reportScore(id, score, maxScore);
     const div = document.createElement('div');
     div.className = 'result-screen card';
+    const medalIcon = medal(score, maxScore);
     div.innerHTML =
       '<div class="result-score">' + score + ' / ' + maxScore + '</div>' +
-      '<div class="result-tier">' + tier(score, maxScore) + '</div>' +
+      '<div class="result-tier">' + (medalIcon ? medalIcon + ' ' : '') + tier(score, maxScore) + '</div>' +
       (best > score ? '<p>' + t('bestSoFar', { best: best }) + '</p>' : '') +
       '<div class="actions" style="justify-content:center">' +
       '<button class="btn btn-secondary" data-retry>' + (retryLabel || t('tryAgain')) + '</button>' +
@@ -201,6 +242,50 @@
     div.querySelector('[data-retry]').addEventListener('click', () => show(id));
     container.appendChild(div);
     div.scrollIntoView({ behavior: 'smooth', block: 'center' });
+  }
+
+  /* ---------- certificate ---------- */
+  function showCertificate() {
+    activeId = 'certificate';
+    const container = document.getElementById('module-container');
+    container.innerHTML = '';
+    const tt = totals();
+    const dateStr = new Date().toLocaleDateString(lang() === 'cs' ? 'cs-CZ' : 'en-US', {
+      year: 'numeric', month: 'long', day: 'numeric'
+    });
+    const overallMedal = medal(tt.total, tt.max);
+
+    const card = document.createElement('div');
+    card.className = 'certificate card';
+    card.innerHTML =
+      '<div class="cert-badge">🎓</div>' +
+      '<h2 class="cert-title">' + t('certTitle') + '</h2>' +
+      '<p class="cert-intro">' + t('certIntro') + '</p>' +
+      '<div class="cert-name">' + (state.name || '') + '</div>' +
+      '<div class="cert-meta">' +
+        '<span>' + t('certDate') + ' ' + dateStr + '</span>' +
+        '<span>' + t('certScore') + ' ' + tt.total + ' / ' + tt.max + '</span>' +
+        '<span>' + (overallMedal ? overallMedal + ' ' : '') + tier(tt.total, tt.max) + '</span>' +
+      '</div>' +
+      '<div class="cert-modules">' +
+        modules.map(m => {
+          const s = moduleState(m.id);
+          return '<div class="cert-module">' +
+            '<span class="cert-module-icon">' + m.icon + '</span>' +
+            '<span class="cert-module-name">' + tr(m.title) + '</span>' +
+            '<span class="cert-module-score">' + (medal(s.score, s.maxScore) || '✓') + ' ' + s.score + '/' + s.maxScore + '</span>' +
+          '</div>';
+        }).join('') +
+      '</div>' +
+      '<div class="actions no-print" style="justify-content:center">' +
+        '<button class="btn btn-primary" data-print>' + t('certPrint') + '</button>' +
+      '</div>';
+    card.querySelector('[data-print]').addEventListener('click', () => window.print());
+    container.appendChild(card);
+
+    updateTabs();
+    updateHeader();
+    window.scrollTo({ top: 0 });
   }
 
   /* ---------- confetti (pure CSS/JS, lightweight) ---------- */
@@ -245,7 +330,8 @@
     applyStaticText();
     buildTabs();
     updateHeader();
-    if (activeId) show(activeId);
+    if (activeId === 'certificate') showCertificate();
+    else if (activeId) show(activeId);
   }
 
   function initLangSwitch() {

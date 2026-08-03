@@ -310,6 +310,44 @@ h1, h2, h3 { color: var(--heading); font-weight: 800; }
 .sev-Critical { color: var(--czechitas-pink); }
 .cvss-vector { font-family: 'Source Code Pro', monospace; font-size: .8rem; color: var(--muted); margin-top: .3rem; word-break: break-all; }
 
+/* ---------- Certificate ---------- */
+.tab.cert-tab { color: var(--czechitas-yellow); }
+.tab.cert-tab.active { color: var(--czechitas-pink); border-bottom-color: var(--czechitas-pink); }
+
+.certificate { text-align: center; padding: 2.4rem 1.6rem; position: relative; overflow: hidden; }
+.certificate::before {
+  content: ''; position: absolute; top: 0; left: 0; right: 0; height: 6px;
+  background: var(--czechitas-gradient);
+}
+.cert-badge { font-size: 3rem; line-height: 1; margin-bottom: .3rem; }
+.cert-title { margin: 0 0 .4rem; }
+.cert-intro { color: var(--muted); margin: 0 0 1.4rem; }
+.cert-name { font-size: 1.6rem; font-weight: 800; color: var(--heading); margin-bottom: .8rem; }
+.cert-meta {
+  display: flex; justify-content: center; flex-wrap: wrap; gap: .5rem 1.4rem;
+  font-size: .95rem; font-weight: 700; color: var(--ink);
+  margin-bottom: 1.6rem; padding-bottom: 1.4rem; border-bottom: 1px solid var(--line);
+}
+.cert-modules {
+  display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: .6rem; text-align: left; margin-bottom: .4rem;
+}
+.cert-module {
+  display: flex; align-items: center; gap: .5rem;
+  background: var(--soft); border-radius: 8px; padding: .5rem .7rem;
+  font-size: .85rem; font-weight: 700;
+}
+.cert-module-icon { font-size: 1.1rem; }
+.cert-module-name { flex: 1; }
+.cert-module-score { color: var(--muted); font-weight: 600; white-space: nowrap; }
+
+@media print {
+  .app-header, .tabs, .app-footer, #confetti-layer, .no-print { display: none !important; }
+  body { background: #fff; }
+  .module-container { padding: 0; max-width: none; }
+  .certificate { border: none; box-shadow: none; }
+}
+
 /* ---------- Footer ---------- */
 .app-footer { text-align: center; font-size: .78rem; color: var(--muted-soft); padding: 1.5rem 1rem 2rem; }
 
