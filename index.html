@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html lang="cs">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ISMS Hands-On Lab — Czechitas</title>
+<script>
+(function () {
+  try {
+    var raw = localStorage.getItem('isms-lab-progress');
+    var theme = raw ? JSON.parse(raw).theme : null;
+    if (theme === 'light' || theme === 'dark') {
+      document.documentElement.setAttribute('data-theme', theme);
+    }
+  } catch (e) { /* ignore */ }
+})();
+</script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Open+Sans:wght@300;400;700;800&family=Source+Code+Pro:wght@400;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<!-- Login gate -->
+<div id="login-overlay" class="login-overlay hidden">
+  <div class="login-card">
+    <div class="login-brand">ISMS Hands-On Lab</div>
+    <div class="login-switches">
+      <div class="switch-group" role="group" aria-label="Language / Jazyk">
+        <button class="switch-btn" data-lang="cs" type="button">CZ</button>
+        <button class="switch-btn" data-lang="en" type="button">EN</button>
+      </div>
+      <div class="switch-group" role="group" aria-label="Theme / Motiv">
+        <button class="switch-btn" data-theme="auto" type="button">🖥️</button>
+        <button class="switch-btn" data-theme="light" type="button">☀️</button>
+        <button class="switch-btn" data-theme="dark" type="button">🌙</button>
+      </div>
+    </div>
+    <h1 id="login-title">Vítej!</h1>
+    <p id="login-desc">Zadej své jméno, aby si lab mohl v tomto prohlížeči pamatovat tvůj postup.</p>
+    <input type="text" id="login-name" maxlength="40" placeholder="Tvoje jméno" autocomplete="off">
+    <button id="login-btn" class="btn btn-primary">Spustit lab</button>
+    <p class="login-note" id="login-note">Tvoje jméno a skóre zůstávají jen v tomto prohlížeči — nikam se neodesílají.</p>
+  </div>
+</div>
+
+<!-- App -->
+<div id="app" class="hidden">
+  <header class="app-header">
+    <div class="header-top">
+      <div class="header-title">
+        <span class="header-logo">ISMS</span> Hands-On Lab
+      </div>
+      <div class="header-user">
+        <div class="header-switches">
+          <div class="switch-group" role="group" aria-label="Language / Jazyk">
+            <button class="switch-btn" data-lang="cs" type="button">CZ</button>
+            <button class="switch-btn" data-lang="en" type="button">EN</button>
+          </div>
+          <div class="switch-group" role="group" aria-label="Theme / Motiv">
+            <button class="switch-btn" data-theme="auto" type="button">🖥️</button>
+            <button class="switch-btn" data-theme="light" type="button">☀️</button>
+            <button class="switch-btn" data-theme="dark" type="button">🌙</button>
+          </div>
+        </div>
+        <span id="header-name"></span>
+        <button id="change-name" class="link-btn" title="Změnit jméno">✎</button>
+      </div>
+    </div>
+    <div class="header-score">
+      <span id="header-badge" class="analyst-badge hidden">🏅 Bezpečnostní analytička</span>
+      <span class="score-star">⭐ <span id="total-score">0</span> / <span id="max-score">0</span></span>
+      <span class="progress-label"><span id="modules-done">0</span>/<span id="modules-total">8</span> <span id="modules-word">modulů</span></span>
+    </div>
+    <div class="progress-track"><div id="progress-fill" class="progress-fill"></div></div>
+  </header>
+
+  <nav id="tabs" class="tabs" aria-label="Modules"></nav>
+
+  <main id="module-container" class="module-container"></main>
+
+  <footer class="app-footer">
+    <span id="app-footer-text">Czechitas — Specialistka informační bezpečnosti · doprovodné cvičení k přednáškám ISMS</span>
+  </footer>
+</div>
+
+<div id="confetti-layer"></div>
+
+<script src="gamification.js"></script>
+<script src="cvss40.js"></script>
+<script src="modules/vulnerability.js"></script>
+<script src="modules/physical-security.js"></script>
+<script src="modules/cm-vs-chm.js"></script>
+<script src="modules/crypto.js"></script>
+<script src="modules/hardening.js"></script>
+<script src="modules/privileged-tools.js"></script>
+<script src="modules/pam.js"></script>
+<script src="modules/network-segmentation.js"></script>
+<script>ISMS.boot();</script>
+</body>
+</html>
