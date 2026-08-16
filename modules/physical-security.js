@@ -4,39 +4,126 @@
 
   const tr = ISMS.tr;
 
-  // x/y are positions on the 720x480 SVG floor plan
-  const HOTSPOTS = [
-    { id: 'door',    label: '1', x: 512, y: 108, weakness: true,
-      name: { en: 'Server room door propped open', cs: 'Dveře serverovny podepřené otevřené' },
-      why: { en: 'Bypasses badge/access control entirely.', cs: 'Zcela obchází kontrolu přístupu pomocí karty.' } },
-    { id: 'sticky',  label: '2', x: 200, y: 200, weakness: true,
-      name: { en: 'Sticky note with password on monitor', cs: 'Papírek s heslem nalepený na monitoru' },
-      why: { en: 'Credential exposure to anyone passing by.', cs: 'Přihlašovací údaje jsou vystaveny komukoli, kdo jde kolem.' } },
-    { id: 'tailgate',label: '3', x: 84,  y: 388, weakness: true,
-      name: { en: 'Person holding door for someone carrying boxes', cs: 'Osoba podržující dveře někomu s krabicemi v rukou' },
-      why: { en: 'Tailgating — no badge check.', cs: 'Tailgating — bez kontroly přístupové karty.' } },
-    { id: 'badge',   label: '4', x: 208, y: 396, weakness: true,
-      name: { en: 'Visitor badge left unattended at reception', cs: 'Návštěvnická karta ponechaná bez dozoru na recepci' },
-      why: { en: 'Can be taken and reused.', cs: 'Kdokoli si ji může vzít a zneužít.' } },
-    { id: 'window',  label: '5', x: 74,  y: 160, weakness: true,
-      name: { en: 'Monitor visible from ground-floor street window', cs: 'Monitor viditelný z okna do ulice v přízemí' },
-      why: { en: 'Shoulder surfing / visual data leakage.', cs: 'Shoulder surfing / únik dat vizuálním pozorováním.' } },
-    { id: 'clean',   label: '6', x: 622, y: 170, weakness: true,
-      name: { en: 'Cleaning staff working alone in server room', cs: 'Úklidový personál sám v serverovně' },
-      why: { en: 'Unsupervised access to sensitive area.', cs: 'Nekontrolovaný přístup do citlivého prostoru.' } },
-    { id: 'cabinet', label: '7', x: 386, y: 300, weakness: true,
-      name: { en: 'Locked filing cabinet with key in the lock', cs: 'Uzamčená kartotéka s klíčem ponechaným v zámku' },
-      why: { en: 'Physical lock defeated by leaving key accessible.', cs: 'Fyzický zámek je zbytečný, když je klíč volně dostupný.' } },
-    { id: 'fire',    label: '8', x: 466, y: 408, weakness: false,
-      name: { en: 'Fire extinguisher clearly signed and accessible', cs: 'Hasicí přístroj zřetelně označený a dostupný' },
-      why: { en: 'This is correct practice, not a weakness.', cs: 'Toto je správná praxe, ne slabina.' } },
-    { id: 'cctv',    label: '9', x: 330, y: 430, weakness: false,
-      name: { en: 'CCTV camera covering main entrance', cs: 'Kamerový systém pokrývající hlavní vchod' },
-      why: { en: 'Correct control in place.', cs: 'Správně nastavené opatření.' } }
+  // x/y are fixed positions on the 720x480 SVG floor plan, shared by every difficulty level
+  const POSITIONS = [
+    { id: 'door',    label: '1', x: 512, y: 108 },
+    { id: 'sticky',  label: '2', x: 200, y: 200 },
+    { id: 'tailgate',label: '3', x: 84,  y: 388 },
+    { id: 'badge',   label: '4', x: 208, y: 396 },
+    { id: 'window',  label: '5', x: 74,  y: 160 },
+    { id: 'clean',   label: '6', x: 622, y: 170 },
+    { id: 'cabinet', label: '7', x: 386, y: 300 },
+    { id: 'fire',    label: '8', x: 466, y: 408 },
+    { id: 'cctv',    label: '9', x: 330, y: 430 }
   ];
 
+  const LEVELS = {
+    easy: {
+      door:    { weakness: true,
+        name: { en: 'Server room door propped open with a chair', cs: 'Dveře serverovny podepřené židlí a otevřené' },
+        why: { en: 'Bypasses badge/access control entirely — anyone can just walk in.', cs: 'Zcela obchází kontrolu přístupu pomocí karty — kdokoli může volně vejít.' } },
+      sticky:  { weakness: true,
+        name: { en: 'Password written on a sticky note stuck to the monitor', cs: 'Heslo napsané na papírku nalepeném na monitoru' },
+        why: { en: 'Credentials exposed in plain sight to anyone passing by.', cs: 'Přihlašovací údaje jsou vystaveny na očích komukoli, kdo jde kolem.' } },
+      tailgate:{ weakness: true,
+        name: { en: 'Stranger in a delivery uniform slips in right behind an employee, no badge shown', cs: 'Cizí osoba v uniformě doručovatele proklouzne hned za zaměstnancem, bez ukázání karty' },
+        why: { en: 'Classic tailgating — access gained without any badge check at all.', cs: 'Klasický tailgating — přístup získán zcela bez kontroly přístupové karty.' } },
+      badge:   { weakness: true,
+        name: { en: 'Unattended visitor badge lying on the reception desk, no one watching it', cs: 'Nehlídaná návštěvnická karta ležící na recepčním pultu' },
+        why: { en: 'Anyone walking by can pick it up and use it to gain access.', cs: 'Kdokoli kolem procházející si ji může vzít a zneužít pro vstup.' } },
+      window:  { weakness: false,
+        name: { en: 'Ground-floor street window covered with opaque privacy film', cs: 'Okno do ulice v přízemí zakryté neprůhlednou bezpečnostní fólií' },
+        why: { en: 'Nothing inside is visible from the street — the control is doing its job.', cs: 'Zevnitř není zvenku nic vidět — opatření plní svůj účel.' } },
+      clean:   { weakness: true,
+        name: { en: 'Cleaning contractor props the server room door open to move a cart through, no escort', cs: 'Úklidová firma si podepře dveře serverovny kvůli vozíku, bez doprovodu' },
+        why: { en: 'Unsupervised third party with open access to a sensitive area.', cs: 'Nekontrolovaná třetí strana s otevřeným přístupem do citlivého prostoru.' } },
+      cabinet: { weakness: true,
+        name: { en: 'Locked filing cabinet with the key left hanging in the lock', cs: 'Uzamčená kartotéka s klíčem ponechaným v zámku' },
+        why: { en: 'The lock is pointless if the key is left right there.', cs: 'Zámek je k ničemu, když je klíč ponechán přímo v něm.' } },
+      fire:    { weakness: false,
+        name: { en: 'Fire extinguisher clearly signed and mounted in the hallway', cs: 'Hasicí přístroj zřetelně označený a zavěšený na chodbě' },
+        why: { en: 'This is correct safety practice, not a weakness.', cs: 'Toto je správná bezpečnostní praxe, ne slabina.' } },
+      cctv:    { weakness: false,
+        name: { en: 'CCTV camera clearly covering the main entrance', cs: 'Kamerový systém zřetelně pokrývající hlavní vchod' },
+        why: { en: 'Correct control in place, working as intended.', cs: 'Správně nastavené opatření, funguje jak má.' } }
+    },
+    medium: {
+      door:    { weakness: true,
+        name: { en: 'Server room door propped open', cs: 'Dveře serverovny podepřené otevřené' },
+        why: { en: 'Bypasses badge/access control entirely.', cs: 'Zcela obchází kontrolu přístupu pomocí karty.' } },
+      sticky:  { weakness: true,
+        name: { en: 'Sticky note with password on monitor', cs: 'Papírek s heslem nalepený na monitoru' },
+        why: { en: 'Credential exposure to anyone passing by.', cs: 'Přihlašovací údaje jsou vystaveny komukoli, kdo jde kolem.' } },
+      tailgate:{ weakness: true,
+        name: { en: 'Person holding door for someone carrying boxes', cs: 'Osoba podržující dveře někomu s krabicemi v rukou' },
+        why: { en: 'Tailgating — no badge check.', cs: 'Tailgating — bez kontroly přístupové karty.' } },
+      badge:   { weakness: true,
+        name: { en: 'Visitor badge left unattended at reception', cs: 'Návštěvnická karta ponechaná bez dozoru na recepci' },
+        why: { en: 'Can be taken and reused.', cs: 'Kdokoli si ji může vzít a zneužít.' } },
+      window:  { weakness: true,
+        name: { en: 'Monitor visible from ground-floor street window', cs: 'Monitor viditelný z okna do ulice v přízemí' },
+        why: { en: 'Shoulder surfing / visual data leakage.', cs: 'Shoulder surfing / únik dat vizuálním pozorováním.' } },
+      clean:   { weakness: true,
+        name: { en: 'Cleaning staff working alone in server room', cs: 'Úklidový personál sám v serverovně' },
+        why: { en: 'Unsupervised access to sensitive area.', cs: 'Nekontrolovaný přístup do citlivého prostoru.' } },
+      cabinet: { weakness: true,
+        name: { en: 'Locked filing cabinet with key in the lock', cs: 'Uzamčená kartotéka s klíčem ponechaným v zámku' },
+        why: { en: 'Physical lock defeated by leaving key accessible.', cs: 'Fyzický zámek je zbytečný, když je klíč volně dostupný.' } },
+      fire:    { weakness: false,
+        name: { en: 'Fire extinguisher clearly signed and accessible', cs: 'Hasicí přístroj zřetelně označený a dostupný' },
+        why: { en: 'This is correct practice, not a weakness.', cs: 'Toto je správná praxe, ne slabina.' } },
+      cctv:    { weakness: false,
+        name: { en: 'CCTV camera covering main entrance', cs: 'Kamerový systém pokrývající hlavní vchod' },
+        why: { en: 'Correct control in place.', cs: 'Správně nastavené opatření.' } }
+    },
+    hard: {
+      door:    { weakness: false,
+        name: { en: 'Server room door in fail-safe unlocked mode during a supervised fire-drill test', cs: 'Dveře serverovny v režimu fail-safe (odemčeno) během dozorovaného cvičného požárního poplachu' },
+        why: { en: 'Fail-safe egress during a fire event is a life-safety requirement, and it’s happening under a supervised, scheduled drill — not a security weakness.', cs: 'Fail-safe úniková cesta při požáru je požadavek na bezpečnost osob a probíhá pod dozorem v rámci plánovaného cvičení — není to bezpečnostní slabina.' } },
+      sticky:  { weakness: false,
+        name: { en: 'Sticky note on a monitor listing this week’s on-call phone numbers', cs: 'Papírek na monitoru s telefonními čísly aktuální pohotovosti' },
+        why: { en: 'No credentials or sensitive data on it — an on-call rota isn’t a security weakness.', cs: 'Neobsahuje žádné přihlašovací údaje ani citlivá data — rozpis pohotovosti není bezpečnostní slabina.' } },
+      tailgate:{ weakness: false,
+        name: { en: 'Two employees badge in at the same door within a second of each other, each with their own card', cs: 'Dva zaměstnanci projdou stejnými dveřmi v rozestupu jedné vteřiny, každý s vlastní kartou' },
+        why: { en: 'Both individually authenticate with a valid badge — that isn’t tailgating, even though it looks similar at a glance.', cs: 'Oba se individuálně autentizují platnou kartou — o tailgating nejde, i když to na první pohled tak vypadá.' } },
+      badge:   { weakness: false,
+        name: { en: 'Visitor badge that auto-expires after 4 hours, worn on a lanyard by an escorted visitor', cs: 'Návštěvnická karta s automatickým vypršením platnosti po 4 hodinách, nošená na klíčence doprovázeným návštěvníkem' },
+        why: { en: 'Time-limited, worn by the visitor, and escorted — this is correct visitor management, not a weakness.', cs: 'Časově omezená, nošená návštěvníkem a s doprovodem — jde o správnou správu návštěv, ne o slabinu.' } },
+      window:  { weakness: true,
+        name: { en: 'Street-facing window has anti-glare privacy film, but on sunny afternoons monitor content is still faintly readable from outside', cs: 'Okno do ulice má protiodleskovou bezpečnostní fólii, ale za slunečných odpolední je obsah monitoru zvenku stále slabě čitelný' },
+        why: { en: 'The film alone doesn’t fully solve the problem — screens near street-facing windows should also be angled away regardless of any film applied.', cs: 'Fólie sama problém plně neřeší — monitory u oken do ulice by měly být natočené mimo dohled bez ohledu na to, zda je fólie nalepená.' } },
+      clean:   { weakness: false,
+        name: { en: 'Cleaning contractor in the server room, wearing a visible contractor badge, accompanied the whole time by an IT staff member', cs: 'Úklidová firma v serverovně s viditelnou kartou dodavatele, po celou dobu v doprovodu pracovníka IT' },
+        why: { en: 'Escorted the entire time by IT staff — supervised third-party access to a sensitive area is standard practice.', cs: 'Po celou dobu v doprovodu IT — dohlížený přístup třetí strany do citlivého prostoru je standardní praxe.' } },
+      cabinet: { weakness: false,
+        name: { en: 'Locked filing cabinet, its key stored in a badge-controlled key safe nearby', cs: 'Uzamčená kartotéka, jejíž klíč je uložen v nedalekém trezoru na klíče chráněném kartou' },
+        why: { en: 'The key sits behind its own access control instead of being left exposed — proper key management.', cs: 'Klíč je uložen za vlastní kontrolou přístupu místo toho, aby byl volně dostupný — správná správa klíčů.' } },
+      fire:    { weakness: true,
+        name: { en: 'Fire extinguisher is mounted and signed, but its inspection tag shows it expired 14 months ago', cs: 'Hasicí přístroj je zavěšený a označený, ale jeho kontrolní štítek ukazuje, že revize vypršela před 14 měsíci' },
+        why: { en: 'An expired inspection means whether the extinguisher would actually work is unverified — a real control gap, not just missing paperwork.', cs: 'Prošlá revize znamená, že funkčnost přístroje v reálné situaci není ověřena — jde o skutečnou mezeru v opatření, ne jen o chybějící papír.' } },
+      cctv:    { weakness: true,
+        name: { en: 'CCTV camera is mounted over the main entrance, but has been pointed at the ceiling for three weeks after a cleaning mishap, unnoticed', cs: 'Kamera je zavěšená nad hlavním vchodem, ale po nehodě při úklidu už tři týdny míří do stropu, aniž by si toho kdokoli všiml' },
+        why: { en: 'A camera that isn’t recording anything useful provides no real detective control — hardware being present doesn’t mean the control is effective.', cs: 'Kamera, která nesnímá nic užitečného, neposkytuje žádnou reálnou detektivní kontrolu — přítomnost hardwaru neznamená, že opatření funguje.' } }
+    }
+  };
+
+  const DESCRIPTIONS = {
+    easy: {
+      en: 'Clear-cut weaknesses and clearly fine controls — good for learning to spot the classics.',
+      cs: 'Jednoznačné slabiny a zjevně v pořádku fungující opatření — dobré na naučení se poznávat klasiky.'
+    },
+    medium: {
+      en: 'The original nine spots on the floor plan — a realistic mixed audit.',
+      cs: 'Původních devět míst na půdorysu — reálný smíšený audit.'
+    },
+    hard: {
+      en: 'The same spots, reframed with extra context — several answers flip once you read the details, testing real judgment.',
+      cs: 'Stejná místa, převyprávěná s dalším kontextem — u několika se odpověď otočí, jakmile si přečteš detaily. Testuje skutečný úsudek.'
+    }
+  };
+
   const POINTS_PER = 10;
-  const MAX = HOTSPOTS.length * POINTS_PER; // 90
+  const MAX = POSITIONS.length * POINTS_PER; // 90
 
   function planSvg() {
     const officeLabel = tr({ en: 'OPEN OFFICE', cs: 'OPEN OFFICE' });
@@ -83,6 +170,17 @@
   }
 
   function render(container) {
+    ISMS.renderDifficultyPicker(container, {
+      descriptions: DESCRIPTIONS,
+      onPick(level) {
+        container.innerHTML = '';
+        renderExercise(container, level);
+      }
+    });
+  }
+
+  function renderExercise(container, level) {
+    const HOTSPOTS = POSITIONS.map(p => Object.assign({}, p, LEVELS[level][p.id]));
     const picked = new Set();
 
     const intro = document.createElement('p');
@@ -159,7 +257,7 @@
           (correct ? '✓ ' : '✗ ') +
           (h.weakness ? tr({ en: 'Weakness — ', cs: 'Slabina — ' }) : tr({ en: 'Not a weakness — ', cs: 'Není to slabina — ' })) + tr(h.why) + '</span>';
       });
-      ISMS.showResult(resultSlot, 'physical-security', score, MAX);
+      ISMS.showResult(resultSlot, 'physical-security', score, MAX, level);
     });
   }
 

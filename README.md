@@ -25,6 +25,10 @@ https://srameko.github.io/isms-hands-on-lab/
 | 7 | 🔑 PAM | Přidělení přístupu podle principu nejmenších oprávnění |
 | 8 | 🕸️ Segmentace | Umístění systémů do správných síťových zón |
 
+Každý modul má tři úrovně obtížnosti — 🟢 jednoduchou, 🟡 střední a 🔴 těžší —
+mezi kterými si na začátku modulu vybereš a které si můžeš při každém dalším
+pokusu zvolit znovu.
+
 Postup a nejlepší skóre se ukládají jen lokálně v prohlížeči (`localStorage`)
 — nikam se neodesílají. Jméno zadané na začátku slouží jen k personalizaci,
 nejde o autentizaci.

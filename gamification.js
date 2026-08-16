@@ -34,7 +34,13 @@
       certIntro: 'Awarded for completing all modules of the ISMS Hands-On Lab.',
       certDate: 'Date:',
       certScore: 'Total score:',
-      certPrint: 'Print / save as PDF'
+      certPrint: 'Print / save as PDF',
+      diffPickTitle: 'Choose your difficulty',
+      diffPickIntro: 'Pick a level to start — you can pick a different one every time you retry.',
+      diffEasy: 'Easy',
+      diffMedium: 'Medium',
+      diffHard: 'Harder',
+      diffRecommended: 'Recommended'
     },
     cs: {
       loginTitle: 'Vítej!',
@@ -61,7 +67,13 @@
       certIntro: 'Uděleno za dokončení všech modulů ISMS Hands-On Labu.',
       certDate: 'Datum:',
       certScore: 'Celkové skóre:',
-      certPrint: 'Vytisknout / uložit jako PDF'
+      certPrint: 'Vytisknout / uložit jako PDF',
+      diffPickTitle: 'Zvol si obtížnost',
+      diffPickIntro: 'Vyber úroveň, kterou chceš zkusit — při dalším pokusu můžeš zvolit i jinou.',
+      diffEasy: 'Jednoduchá',
+      diffMedium: 'Střední',
+      diffHard: 'Těžší',
+      diffRecommended: 'Doporučeno'
     }
   };
 
@@ -95,16 +107,21 @@
 
   /* ---------- scoring ---------- */
   function moduleState(id) {
-    return state.modules[id] || { score: 0, maxScore: 0, completed: false, attempts: 0 };
+    return state.modules[id] || { score: 0, maxScore: 0, completed: false, attempts: 0, difficulty: null };
   }
 
-  function reportScore(id, score, maxScore) {
+  function diffLabel(key) {
+    return key === 'easy' ? t('diffEasy') : key === 'hard' ? t('diffHard') : key === 'medium' ? t('diffMedium') : '';
+  }
+
+  function reportScore(id, score, maxScore, difficulty) {
     const prev = moduleState(id);
     const best = Math.max(prev.score || 0, score);
     state.modules[id] = {
       score: best, maxScore: maxScore,
       completed: true,
-      attempts: (prev.attempts || 0) + 1
+      attempts: (prev.attempts || 0) + 1,
+      difficulty: difficulty || null
     };
     save();
     updateHeader();
@@ -215,7 +232,8 @@
     head.innerHTML =
       '<h2>' + m.icon + ' ' + tr(m.title) + '</h2>' +
       '<span class="module-best">' +
-      (s.completed ? (medalIcon ? medalIcon + ' ' : '') + t('bestLine', { score: s.score, max: m.maxScore, attempts: s.attempts }) : t('notAttempted')) +
+      (s.completed ? (medalIcon ? medalIcon + ' ' : '') + t('bestLine', { score: s.score, max: m.maxScore, attempts: s.attempts }) +
+        (s.difficulty ? ' · ' + diffLabel(s.difficulty) : '') : t('notAttempted')) +
       '</span>';
     container.appendChild(head);
 
@@ -227,8 +245,8 @@
   }
 
   /* ---------- shared result screen ---------- */
-  function showResult(container, id, score, maxScore, retryLabel) {
-    const best = reportScore(id, score, maxScore);
+  function showResult(container, id, score, maxScore, difficulty) {
+    const best = reportScore(id, score, maxScore, difficulty);
     const div = document.createElement('div');
     div.className = 'result-screen card';
     const medalIcon = medal(score, maxScore);
@@ -237,11 +255,39 @@
       '<div class="result-tier">' + (medalIcon ? medalIcon + ' ' : '') + tier(score, maxScore) + '</div>' +
       (best > score ? '<p>' + t('bestSoFar', { best: best }) + '</p>' : '') +
       '<div class="actions" style="justify-content:center">' +
-      '<button class="btn btn-secondary" data-retry>' + (retryLabel || t('tryAgain')) + '</button>' +
+      '<button class="btn btn-secondary" data-retry>' + t('tryAgain') + '</button>' +
       '</div>';
     div.querySelector('[data-retry]').addEventListener('click', () => show(id));
     container.appendChild(div);
     div.scrollIntoView({ behavior: 'smooth', block: 'center' });
+  }
+
+  /* ---------- shared difficulty picker ---------- */
+  function renderDifficultyPicker(container, opts) {
+    const card = document.createElement('div');
+    card.className = 'card difficulty-picker';
+    card.innerHTML =
+      '<h3>' + t('diffPickTitle') + '</h3>' +
+      '<p class="module-intro" style="margin:.2rem 0 1rem">' + t('diffPickIntro') + '</p>' +
+      '<div class="difficulty-grid" data-grid></div>';
+    const grid = card.querySelector('[data-grid]');
+    [
+      { key: 'easy', icon: '🟢', label: t('diffEasy') },
+      { key: 'medium', icon: '🟡', label: t('diffMedium'), recommended: true },
+      { key: 'hard', icon: '🔴', label: t('diffHard') }
+    ].forEach(lv => {
+      const btn = document.createElement('button');
+      btn.type = 'button';
+      btn.className = 'difficulty-card';
+      btn.innerHTML =
+        '<span class="difficulty-icon">' + lv.icon + '</span>' +
+        '<span class="difficulty-name">' + lv.label +
+        (lv.recommended ? ' <span class="difficulty-tag">' + t('diffRecommended') + '</span>' : '') + '</span>' +
+        '<span class="difficulty-desc">' + tr(opts.descriptions[lv.key]) + '</span>';
+      btn.addEventListener('click', () => opts.onPick(lv.key));
+      grid.appendChild(btn);
+    });
+    container.appendChild(card);
   }
 
   /* ---------- certificate ---------- */
@@ -273,7 +319,8 @@
           return '<div class="cert-module">' +
             '<span class="cert-module-icon">' + m.icon + '</span>' +
             '<span class="cert-module-name">' + tr(m.title) + '</span>' +
-            '<span class="cert-module-score">' + (medal(s.score, s.maxScore) || '✓') + ' ' + s.score + '/' + s.maxScore + '</span>' +
+            '<span class="cert-module-score">' + (medal(s.score, s.maxScore) || '✓') + ' ' + s.score + '/' + s.maxScore +
+            (s.difficulty ? ' · ' + diffLabel(s.difficulty) : '') + '</span>' +
           '</div>';
         }).join('') +
       '</div>' +
@@ -403,6 +450,7 @@
   window.ISMS = {
     registerModule(mod) { modules.push(mod); },
     showResult,
+    renderDifficultyPicker,
     lang,
     tr,
     t,
